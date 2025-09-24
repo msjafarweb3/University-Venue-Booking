@@ -25,7 +25,8 @@ This system allows students and admins to schedule, approve, and manage lecture 
 
 ## 🎥 Demo Video
 
-[![Watch the demo](https://img.youtube.com/vi/Czybxfc9Au4.jpg)](https://youtu.be/Czybxfc9Au4)
+[![Watch the demo](https://img.youtube.com/vi/Czybxfc9Au4/0.jpg)](https://youtu.be/Czybxfc9Au4)
+
 
 
 ---
