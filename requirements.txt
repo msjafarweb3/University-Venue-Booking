@@ -1,0 +1,22 @@
+Flask==2.3.2
+Flask-Mail==0.9.1
+Flask-SQLAlchemy==3.0.5
+Flask-WTF==1.1.1
+Werkzeug==2.3.4
+Jinja2==3.1.2
+itsdangerous==2.1.2
+
+# Task scheduling
+APScheduler==3.10.1
+
+# Database
+SQLAlchemy==2.0.19
+
+# Email + environment handling
+python-dotenv==1.0.0
+
+# For password hashing
+bcrypt==4.0.1
+
+# Optional (if you used requests in your code)
+requests==2.31.0
