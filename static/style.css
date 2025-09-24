@@ -1,0 +1,115 @@
+/* static/style.css */
+
+/* General Body and Font Styling */
+body {
+    font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background-color: #f8f9fa; /* Light background for a clean look */
+    color: #343a40; /* Darker text for readability */
+}
+
+/* Specific styling for elements that might benefit from custom touches */
+
+/* Card Styling for subtle shadow and rounded corners */
+.card {
+    border: none; /* Remove default Bootstrap border */
+    border-radius: 0.75rem; /* More pronounced rounded corners */
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1); /* Slightly softer shadow */
+}
+
+/* Card Header Styling */
+.card-header {
+    border-top-left-radius: 0.75rem;
+    border-top-right-radius: 0.75rem;
+    padding: 1.25rem 1.5rem; /* More padding */
+    font-size: 1.15rem; /* Slightly larger font */
+    font-weight: 600; /* Bolder text */
+    color: #fff; /* Ensure text is white for dark backgrounds */
+}
+
+/* Override default Bootstrap card-header colors for gradient effect if desired */
+.card-header.bg-primary { background: linear-gradient(135deg, #007bff, #0056b3); }
+.card-header.bg-success { background: linear-gradient(135deg, #28a745, #1e7e34); }
+.card-header.bg-warning { background: linear-gradient(135deg, #ffc107, #e0a800); color: #333;}
+.card-header.bg-info { background: linear-gradient(135deg, #17a2b8, #117a8b); }
+.card-header.bg-secondary { background: linear-gradient(135deg, #6c757d, #5a6268); }
+.card-header.bg-dark { background: linear-gradient(135deg, #343a40, #23272b); }
+
+
+/* Form control enhancements */
+.form-control, .form-select {
+    border-radius: 0.5rem; /* Rounded corners for inputs */
+    padding: 0.75rem 1rem; /* More comfortable padding */
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+.form-control:focus, .form-select:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.25rem rgba(0, 123, 255, 0.25);
+}
+
+/* Button enhancements */
+.btn {
+    border-radius: 0.5rem; /* Consistent rounded corners */
+    font-weight: 600; /* Bolder button text */
+    transition: all 0.2s ease-in-out;
+}
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0, 123, 255, 0.2); }
+.btn-success:hover { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(40, 167, 69, 0.2); }
+.btn-danger:hover { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(220, 53, 69, 0.2); }
+.btn-info:hover { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(23, 162, 184, 0.2); }
+.btn-outline-dark:hover { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(52, 58, 64, 0.2); }
+.btn-outline-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0, 123, 255, 0.2); }
+
+/* Table enhancements */
+.table thead th {
+    font-weight: 600; /* Bolder table headers */
+    color: #495057; /* Slightly darker header text */
+    vertical-align: middle;
+}
+.table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(0, 0, 0, 0.03); /* Subtle stripe */
+}
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.05); /* Hover effect */
+}
+
+/* Specific text color for statuses */
+.text-success { color: #28a745 !important; }
+.text-warning { color: #ffc107 !important; }
+.text-danger { color: #dc3545 !important; }
+
+/* FullCalendar styling tweaks */
+.fc-event {
+    font-size: 0.85rem;
+    white-space: normal;
+    word-wrap: break-word; /* Ensure text wraps */
+    border-radius: 0.25rem; /* Rounded corners for events */
+    padding: 0.2rem 0.4rem; /* Small padding */
+}
+.fc-button {
+    text-transform: capitalize; /* Make button text normal case */
+}
+.fc-toolbar-title {
+    font-size: 1.5rem; /* Larger calendar title */
+    font-weight: 600;
+    color: #343a40;
+}
+.fc-col-header-cell {
+    font-weight: 600; /* Bolder day names */
+    color: #495057;
+}
+
+/* Utility to centralize content in cards if needed */
+.card-center-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+/* Ensure images in the header/logo containers are responsive */
+.img-fluid {
+    max-width: 100%;
+    height: auto;
+}
+

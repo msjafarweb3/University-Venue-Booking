@@ -1,0 +1,1552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Student Dashboard - Venue Booking System</title>
+    <link rel="icon" type="image/png" href="/static/cropped-nsuk.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        /* Custom styles for the new Student Dashboard UI */
+        body {
+            background-color: #f0f2f5; /* Light gray background */
+        }
+        #student-dashboard-wrapper {
+            display: flex;
+            min-height: 100vh; /* Full viewport height */
+        }
+        #sidebar {
+            width: 250px;
+            background-color: #ffffff; /* Changed to white */
+            box-shadow: 0 0 10px rgba(0,0,0,0.15);
+            padding: 20px 0;
+            display: flex;
+            flex-direction: column;
+            position: sticky;
+            top: 0;
+            left: 0;
+            height: 100vh; /* Make sidebar fill viewport height */
+            overflow-y: auto; /* Enable scrolling for long content */
+            transition: width 0.3s ease; /* Smooth transition for sidebar toggle */
+            z-index: 1030; /* Above navbar for mobile toggle */
+        }
+
+        /* Responsive sidebar toggle */
+        @media (max-width: 991.98px) {
+            #sidebar {
+                position: fixed;
+                left: -250px; /* Hidden by default on small screens */
+                width: 250px;
+                box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            }
+            #sidebar.show {
+                left: 0;
+            }
+        }
+
+        #sidebar .sidebar-header {
+            padding: 0 20px 20px 20px;
+            border-bottom: 1px solid #e0e0e0; /* Lighter border for contrast with white background */
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+        }
+        #sidebar .sidebar-header img {
+            height: 40px;
+            margin-right: 10px;
+        }
+        #sidebar .sidebar-header h5 {
+            font-weight: bold;
+            color: #333333; /* Dark text for white background */
+            margin-bottom: 0;
+        }
+        #sidebar .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: #555555; /* Darker text for links */
+            text-decoration: none;
+            transition: background-color 0.2s, color 0.2s;
+            font-weight: 500;
+            gap: 20px; /* Added gap here for spacing between flex items */
+        }
+        #sidebar .nav-link:hover,
+        #sidebar .nav-link.active {
+            background-color: #f0f0f0; /* Very light gray on hover/active */
+            color: #007bff; /* Bootstrap primary blue for active text */
+            border-left: 4px solid #007bff; /* Bootstrap primary blue border for active */
+            padding-left: 16px; /* Adjust padding for border */
+        }
+        #sidebar .nav-link i {
+            /* margin-right: 20px !important; Removed this as gap handles spacing now */
+            width: 15px; /* Fixed width for icons */
+            text-align: center;
+        }
+        #content-wrapper {
+            flex-grow: 1;
+            padding: 20px;
+            background-color: #f0f2f5;
+        }
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+        .dashboard-header h4 {
+            font-weight: bold;
+            color: #333;
+        }
+        .card {
+            border: none;
+            border-radius: 12px; /* More rounded corners */
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08); /* Stronger shadow */
+            overflow: hidden; /* Ensures rounded corners are respected */
+        }
+        .card-header {
+            background-color: #006400; /* Nasarawa Green header for cards */
+            color: white;
+            font-weight: bold;
+            padding: 1rem 1.5rem;
+            border-bottom: none; /* Remove default border */
+        }
+        /* Specific card header colors, overriding if necessary */
+        .card-header.bg-success { background-color: #2ecc71 !important; } /* Green for booking */
+        .card-header.bg-dark { background-color: #34495e !important; } /* Dark for calendar */
+        .card-header.bg-primary { background-color: #006400 !important; } /* Nasarawa Green for My Bookings */
+
+        .section-header {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin-bottom: 25px;
+            color: #333;
+        }
+        .table thead th {
+            background-color: #ecf0f1; /* Light gray for table headers */
+            color: #555;
+            font-weight: 600;
+        }
+        .table tbody tr:hover {
+            background-color: #e0e0e0;
+        }
+        .status-badge {
+            padding: .4em .8em;
+            border-radius: .5rem; /* More rounded */
+            font-weight: bold;
+            font-size: 0.9em;
+            display: inline-block; /* Ensure padding applies */
+        }
+        .status-pending { background-color: #f39c12; color: #fff; } /* Orange */
+        .status-approved { background-color: #27ae60; color: #fff; } /* Darker Green */
+        .status-rejected { background-color: #e74c3c; color: #fff; } /* Darker Red */
+        /* Notification specific statuses */
+        .status-info { background-color: #3498db; color: #fff; } /* Blue for general info */
+        .status-account-approved { background-color: #27ae60; color: #fff; }
+        .status-account-rejected { background-color: #e74c3c; color: #fff; }
+
+
+        /* FullCalendar styling tweaks for modern look */
+        .fc-toolbar-title {
+            font-size: 1.5rem !important;
+            color: #333;
+            font-weight: bold;
+        }
+        .fc-button-primary {
+            background-color: #006400 !important; /* Nasarawa Green */
+            border-color: #006400 !important; /* Nasarawa Green */
+            color: white !important;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+        .fc-button-primary:hover {
+            background-color: #004d00 !important; /* Darker Nasarawa Green */
+            border-color: #004d00 !important;
+        }
+        .fc-daygrid-day-number {
+            font-weight: bold;
+            color: #555;
+        }
+        .fc-day-today {
+            background-color: #eaf2f8 !important; /* Light blue background for today */
+        }
+        .fc-event {
+            border-radius: 6px !important;
+            font-size: 0.8em !important;
+            padding: 3px 5px !important;
+            margin-bottom: 2px !important;
+            white-space: normal;
+        }
+
+        /* Specific styles for the menu toggle button */
+        .menu-toggle {
+            display: none; /* Hidden by default on large screens */
+            background: none;
+            border: none;
+            font-size: 1.8rem;
+            color: #555;
+            cursor: pointer;
+        }
+
+        @media (max-width: 991.98px) {
+            .menu-toggle {
+                display: block; /* Show on small screens */
+            }
+            .dashboard-header {
+                justify-content: flex-end; /* Push toggle to right */
+            }
+            .dashboard-header h4 {
+                 display: none; /* Hide title on small screens */
+            }
+        }
+
+        /* Upcoming Lectures specific styling */
+        .upcoming-lecture-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .upcoming-lecture-item:last-child {
+            border-bottom: none;
+        }
+        .lecture-info h6 {
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+        .lecture-info p {
+            margin-bottom: 0;
+            font-size: 0.9em;
+            color: #777;
+        }
+        .lecture-time {
+            text-align: right;
+            font-weight: 500;
+            color: #555;
+        }
+        .lecture-time span {
+            display: block;
+            font-size: 0.9em;
+            color: #888;
+        }
+         /* User Profile Card Styling */
+        .user-profile-card .profile-avatar {
+            /* Removed fixed dimensions, will rely on content or absence */
+            /* Removed border and margin-bottom */
+            display: none; /* Hide the avatar if no picture */
+        }
+        .user-profile-card .profile-info h5 {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .user-profile-card .profile-info p {
+            font-size: 0.95em;
+            color: #555;
+            margin-bottom: 5px;
+        }
+        .list-group-item.unread {
+            background-color: #f8f9fa; /* Light background for unread */
+            font-weight: bold;
+            border-left: 5px solid #007bff;
+        }
+        .list-group-item.unread:hover {
+            background-color: #e9ecef;
+        }
+        /* Style for loading indicator for image upload - REMOVED */
+        /*
+        .upload-loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(0,0,0,.1);
+            border-radius: 50%;
+            border-top-color: #007bff;
+            animation: spin 1s ease-in-out infinite;
+            -webkit-animation: spin 1s ease-in-out infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            to { -webkit-transform: rotate(360deg); }
+        }
+        @-webkit-keyframes spin {
+            to { -webkit-transform: rotate(360deg); }
+        }
+        */
+
+        /* NEW: Styles for narrower booking form */
+        #section-book-venue .card-body {
+            display: flex;
+            justify-content: center; /* Center the form within the card */
+        }
+        #section-book-venue .booking-form-container {
+            max-width: 900px; /* Set a max-width for the form container */
+            width: 100%; /* Ensure it takes full width up to max-width */
+        }
+        /* Adjust column widths within the new container if needed, e.g., make them full width inside the narrower container */
+        #section-book-venue .booking-form-container .col-md-6,
+        #section-book-venue .booking-form-container .col-md-12 {
+            width: 100%; /* Make inputs full width of their parent column */
+        }
+        @media (min-width: 768px) { /* On medium devices and up, make them half-width */
+            #section-book-venue .booking-form-container .col-md-6 {
+                flex: 0 0 auto;
+                width: 50%;
+            }
+        }
+
+        /* NEW: Styles for Summary Cards */
+        .summary-card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); /* Lighter shadow for summary cards */
+            text-align: center;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 120px; /* Ensure consistent height */
+            background-color: #fff;
+            transition: transform 0.2s ease-in-out;
+        }
+        .summary-card:hover {
+            transform: translateY(-5px);
+        }
+        .summary-card .icon-circle {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+            color: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .summary-card .icon-circle.bg-total { background-color: #006400; } /* Nasarawa Green */
+        .summary-card .icon-circle.bg-pending { background-color: #f39c12; } /* Orange */
+        .summary-card .icon-circle.bg-approved { background-color: #27ae60; } /* Darker Green */
+        .summary-card .icon-circle.bg-rejected { background-color: #e74c3c; } /* Darker Red */
+
+        .summary-card h6 {
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 5px;
+            font-size: 0.95rem;
+        }
+        .summary-card p {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 0;
+        }
+    </style>
+</head>
+<body>
+
+<div id="student-dashboard-wrapper">
+    <!-- Sidebar -->
+    <nav id="sidebar">
+        <div class="sidebar-header">
+            <img src="/static/cropped-nsuk.png" alt="Logo">
+            <h5>Venue Booking System</h5> <!-- Changed from Student Panel -->
+        </div>
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link active" href="#" data-section="home">
+                    <i class="fas fa-home"></i> Home
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#" data-section="calendar-view"> <!-- New Calendar View link -->
+                    <i class="fas fa-calendar-alt"></i> Calendar View
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#" data-section="my-bookings">
+                    <i class="fas fa-book"></i> My Bookings
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#" data-section="book-venue"> <!-- Book a Venue moved to sidebar -->
+                    <i class="fas fa-plus-circle"></i> Book a Venue
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#" data-section="notifications">
+                    <i class="fas fa-bell"></i> Notifications <span id="notificationCount" class="badge bg-danger rounded-pill ms-2">0</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#" data-section="profile">
+                    <i class="fas fa-user-circle"></i> Profile
+                </a>
+            </li>
+            <li class="nav-item mt-auto"> <!-- Push to bottom -->
+                <a class="nav-link" href="/logout">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- Page Content -->
+    <div id="content-wrapper">
+        <div class="dashboard-header">
+            <h4 class="mb-0">Welcome, <span id="userFullnameDisplay">{{ user['fullname'] }}</span></h4>
+            <button class="menu-toggle d-lg-none" type="button">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+
+        <!-- Section: Home (Dashboard Overview) -->
+        <div id="section-home" class="content-section active">
+            <div class="alert alert-warning border-start border-5 border-warning d-flex align-items-center mb-4" role="alert">
+                <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                <strong class="me-2">Notice:</strong> <span id="dynamicNotice">Loading notice...</span>
+            </div>
+
+            <!-- NEW: Booking Request Status Summary -->
+            <h5 class="section-header">Your Booking Status</h5>
+            <div class="row mb-4">
+                <div class="col-md-3 col-sm-6 mb-4">
+                    <div class="summary-card">
+                        <div class="icon-circle bg-total">
+                            <i class="fas fa-calendar-alt"></i>
+                        </div>
+                        <h6>Total Bookings</h6>
+                        <p id="totalBookingsSummary">0</p>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6 mb-4">
+                    <div class="summary-card">
+                        <div class="icon-circle bg-pending">
+                            <i class="fas fa-hourglass-half"></i>
+                        </div>
+                        <h6>Pending</h6>
+                        <p id="pendingBookingsSummary">0</p>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6 mb-4">
+                    <div class="summary-card">
+                        <div class="icon-circle bg-approved">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <h6>Approved</h6>
+                        <p id="approvedBookingsSummary">0</p>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6 mb-4">
+                    <div class="summary-card">
+                        <div class="icon-circle bg-rejected">
+                            <i class="fas fa-times-circle"></i>
+                        </div>
+                        <h6>Rejected</h6>
+                        <p id="rejectedBookingsSummary">0</p>
+                    </div>
+                </div>
+            </div>
+            <!-- END NEW: Booking Request Status Summary -->
+
+            <div class="row">
+                <!-- User Profile Card -->
+                <div class="col-md-6 mb-4">
+                    <div class="card shadow-sm user-profile-card h-100">
+                        <div class="card-header bg-primary text-white fw-bold">
+                            Your Information
+                        </div>
+                        <div class="card-body text-center">
+                            <!-- Profile picture elements removed -->
+                            <div class="profile-info">
+                                <h5 id="profileCardFullname">Full Name: Loading...</h5>
+                                <p id="profileCardEmail">Email: Loading...</p>
+                                <p id="profileCardMatricNo">Matric No: Loading...</p>
+                            </div>
+                            <button class="btn btn-sm btn-outline-primary mt-3" onclick="showSection('section-profile')">Edit Profile</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Upcoming Lectures (Dynamic Data) -->
+                <div class="col-md-6 mb-4">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-header bg-primary text-white fw-bold">
+                            Upcoming Approved Bookings
+                        </div>
+                        <div class="card-body">
+                            <div id="upcomingLecturesList">
+                                <p class="text-muted text-center">Loading upcoming bookings...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section: Calendar View -->
+        <div id="section-calendar-view" class="content-section d-none">
+            <h5 class="section-header">Calendar View of Your Bookings</h5>
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-dark text-white fw-bold">
+                    My Booking Calendar
+                </div>
+                <div class="card-body">
+                    <div id='calendar'></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section: Book a Venue -->
+        <div id="section-book-venue" class="content-section d-none">
+            <h5 class="section-header">Book a Venue</h5>
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <div class="booking-form-container"> <!-- New container for narrowing the form -->
+                        <div id="bookingMessageDisplay" class="alert d-none" role="alert"></div>
+                        <form id="bookingForm" class="row g-3">
+                            <div class="col-md-6">
+                                <label for="venue" class="form-label">Venue</label>
+                                <select id="venue" class="form-select" required>
+                                    <option value="">Select Venue</option>
+                                    <!-- Venues will be loaded here by JavaScript -->
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="date" class="form-label">Date</label>
+                                <input type="date" class="form-control" id="date" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="start_time" class="form-label">Start Time</label>
+                                <input type="time" class="form-control" id="start_time" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="end_time" class="form-label">End Time</label>
+                                <input type="time" class="form-control" id="end_time" required>
+                            </div>
+                            <div class="col-12">
+                                <label for="course" class="form-label">Course (e.g., CSC401)</label>
+                                <input type="text" class="form-control" id="course" placeholder="e.g., CSC401">
+                            </div>
+                            <div class="col-12">
+                                <label for="purpose" class="form-label">Purpose</label>
+                                <textarea class="form-control" id="purpose" rows="2" placeholder="e.g., Departmental Meeting" required></textarea>
+                            </div>
+                            <div class="col-12">
+                                <label for="attendees" class="form-label">Number of Attendees</label>
+                                <input type="number" class="form-control" id="attendees" min="1" placeholder="Attendees" required>
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-success w-100 py-2 mt-3">Submit Booking</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section: My Bookings -->
+        <div id="section-my-bookings" class="content-section d-none">
+            <h5 class="section-header">My Bookings</h5>
+            <div class="card shadow-sm">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover mb-0 text-center">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Venue</th>
+                                    <th>Date</th>
+                                    <th>Time</th>
+                                    <th>Course</th> <!-- New column -->
+                                    <th>Purpose</th>
+                                    <th>Attendees</th>
+                                    <th>Status</th>
+                                    <th>Email Sent</th>
+                                    <th>Matric No</th>
+                                </tr>
+                            </thead>
+                            <tbody id="yourBookings">
+                                <tr><td colspan="9" class="text-muted">Loading bookings...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section: Notifications (Functional) -->
+        <div id="section-notifications" class="content-section d-none">
+            <h5 class="section-header">Notifications</h5>
+            <div class="card shadow-sm p-4">
+                <div id="notificationMessageDisplay" class="alert d-none" role="alert"></div>
+                <ul class="list-group list-group-flush" id="notificationsList">
+                    <li class="list-group-item text-muted">Loading notifications...</li>
+                </ul>
+                <button class="btn btn-sm btn-outline-secondary mt-3" id="markAllReadBtn">Mark All As Read</button>
+            </div>
+        </div>
+
+        <!-- Section: Profile -->
+        <div id="section-profile" class="content-section d-none">
+            <h5 class="section-header">My Profile</h5>
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <div id="profileMessageDisplay" class="alert d-none" role="alert"></div>
+                    <form id="profileForm">
+                        <!-- Profile picture related HTML elements removed -->
+                        <div class="mb-3">
+                            <label for="profileFullname" class="form-label">Full Name</label>
+                            <input type="text" class="form-control" id="profileFullname" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="profileEmail" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="profileEmail" disabled>
+                        </div>
+                        <div class="mb-3">
+                            <label for="profileMatricNo" class="form-label">Matriculation Number</label>
+                            <input type="text" class="form-control" id="profileMatricNo" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 py-2 mt-2">Update Profile</button>
+                        <button type="button" class="btn btn-outline-secondary w-100 py-2 mt-2" data-bs-toggle="modal" data-bs-target="#changePasswordModal">Change Password</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Change Password Modal -->
+<div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="changePasswordModalLabel">Change Password</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="passwordMessageDisplay" class="alert d-none" role="alert"></div>
+                <form id="changePasswordForm">
+                    <p class="text-muted">You will be logged out after a successful password change.</p>
+                    <div class="mb-3">
+                        <label for="currentPassword" class="form-label">Current Password</label>
+                        <input type="password" class="form-control" id="currentPassword" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="newPassword" class="form-label">New Password</label>
+                        <input type="password" class="form-control" id="newPassword" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="confirmNewPassword" class="form-label">Confirm New Password</label>
+                        <input type="password" class="form-control" id="confirmNewPassword" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="handleChangePassword()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Custom Alert/Confirm Modals -->
+<div class="modal fade" id="customModal" tabindex="-1" aria-labelledby="customModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="customModalLabel"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="customModalBody">
+            </div>
+            <div class="modal-footer" id="customModalFooter">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary d-none" id="customModalConfirmBtn">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+<!-- Firebase Storage SDK removed as profile picture upload is no longer supported -->
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales-all.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js"></script>
+
+
+<script>
+    // YOUR FIREBASE CONFIGURATION - REPLACE WITH YOUR ACTUAL CONFIG
+    const firebaseConfig = {
+       
+    };
+
+    let auth;
+    let db;
+    // Removed 'storage' variable initialization
+
+    const API_BASE_URL = 'http://127.0.0.1:5000';
+
+    const initialAuthToken = "{{ __initial_auth_token | default('') }}";
+
+    console.log("Client-side: Received __initial_auth_token:", initialAuthToken ? initialAuthToken.substring(0, 20) + '...' : "EMPTY/NULL");
+
+
+    // --- Utility Functions ---
+    function showMessage(message, isError = false, targetId = "messageDisplay") {
+        const messageDiv = document.getElementById(targetId);
+        if (messageDiv) {
+            messageDiv.textContent = message;
+            messageDiv.className = `alert ${isError ? 'alert-danger' : 'alert-success'} d-block`;
+            setTimeout(() => {
+                messageDiv.classList.remove('d-block');
+                messageDiv.classList.add('d-none');
+            }, 3000);
+        }
+    }
+
+    function showCustomModal(title, bodyHtml, isConfirm = false, onConfirmCallback = null) {
+        const modalElement = document.getElementById('customModal');
+        const modalTitle = document.getElementById('customModalLabel');
+        const modalBody = document.getElementById('customModalBody');
+        const modalConfirmBtn = document.getElementById('customModalConfirmBtn');
+        const bootstrapModal = new bootstrap.Modal(modalElement);
+
+        modalTitle.textContent = title;
+        modalBody.innerHTML = bodyHtml;
+
+        if (isConfirm) {
+            modalConfirmBtn.classList.remove('d-none');
+            modalConfirmBtn.onclick = () => {
+                bootstrapModal.hide();
+                if (onConfirmCallback) {
+                    onConfirmCallback();
+                }
+            };
+        } else {
+            modalConfirmBtn.classList.add('d-none');
+            modalConfirmBtn.onclick = null; // Clear previous click handler
+        }
+
+        bootstrapModal.show();
+    }
+
+    function showCustomConfirm(message, onConfirmCallback) {
+        showCustomModal('Confirmation', message, true, onConfirmCallback);
+    }
+
+    function showSection(sectionId) {
+        document.querySelectorAll('.content-section').forEach(section => {
+            section.classList.add('d-none');
+        });
+        document.getElementById(sectionId).classList.remove('d-none');
+
+        document.querySelectorAll('#sidebar .nav-link').forEach(link => {
+            link.classList.remove('active');
+        });
+        document.querySelector(`#sidebar .nav-link[data-section="${sectionId.replace('section-', '')}"]`).classList.add('active');
+
+        // Close sidebar on mobile after selection
+        if (window.innerWidth < 992) {
+            document.getElementById('sidebar').classList.remove('show');
+        }
+    }
+
+    // --- Profile Management ---
+    async function loadUserProfile() {
+        if (!auth || !auth.currentUser) {
+            console.warn("User not authenticated for loading profile. (loadUserProfile)");
+            document.getElementById('profileFullname').value = '';
+            document.getElementById('profileEmail').value = '';
+            document.getElementById('profileMatricNo').value = '';
+            document.getElementById('userFullnameDisplay').textContent = 'Guest';
+            // Removed profile picture updates
+            return;
+        }
+
+        console.log("Attempting to load user profile for:", auth.currentUser.email || auth.currentUser.uid);
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/user_profile`);
+            const result = await response.json();
+            if (response.ok && result.user) {
+                document.getElementById('profileFullname').value = result.user.fullname || '';
+                document.getElementById('profileEmail').value = result.user.email || '';
+                document.getElementById('profileMatricNo').value = result.user.matric_no || '';
+                document.getElementById('userFullnameDisplay').textContent = result.user.fullname || 'User';
+                document.getElementById('profileCardFullname').textContent = `Full Name: ${result.user.fullname || 'N/A'}`;
+                document.getElementById('profileCardEmail').textContent = `Email: ${result.user.email || 'N/A'}`;
+                document.getElementById('profileCardMatricNo').textContent = `Matric No: ${result.user.matric_no || 'N/A'}`;
+                // Removed profile picture updates
+
+                console.log("Successfully loaded user profile:", result.user);
+            } else {
+                showMessage(result.error || 'Failed to load profile.', true, 'profileMessageDisplay');
+                console.error("Failed to load user profile:", result.error);
+            }
+        } catch (error) {
+            console.error('Error loading user profile due to network or server issue:', error);
+            showMessage('Failed to load profile due to network error.', true, 'profileMessageDisplay');
+        }
+    }
+
+    const profileForm = document.getElementById("profileForm");
+    if (profileForm) {
+        profileForm.addEventListener("submit", async function(e) {
+            e.preventDefault();
+            const newFullname = document.getElementById("profileFullname").value;
+            const newMatricNo = document.getElementById("profileMatricNo").value;
+
+            if (!auth || !auth.currentUser) {
+                showMessage("Please log in to update your profile.", true, "profileMessageDisplay");
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/user_profile`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ fullname: newFullname, matric_no: newMatricNo })
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    showMessage(result.message, false, "profileMessageDisplay");
+                    document.getElementById('userFullnameDisplay').textContent = newFullname;
+                    document.getElementById('profileCardFullname').textContent = `Full Name: ${newFullname}`;
+                    document.getElementById('profileCardMatricNo').textContent = `Matric No: ${newMatricNo}`;
+                } else {
+                    showMessage(result.error || "Failed to update profile.", true, "profileMessageDisplay");
+                }
+            } catch (error) {
+                console.error('Error updating profile:', error);
+                showMessage('Failed to update profile due to network error.', true, 'profileMessageDisplay');
+            }
+        });
+    }
+
+    // Removed all Firebase Storage related functions and event listeners
+
+
+    // Change Password Logic (Client-side Firebase Auth)
+    async function handleChangePassword() {
+        const currentPassword = document.getElementById("currentPassword").value;
+        const newPassword = document.getElementById("newPassword").value;
+        const confirmNewPassword = document.getElementById("confirmNewPassword").value;
+
+        if (!currentPassword || !newPassword || !confirmNewPassword) {
+            showMessage("All password fields are required.", true, "passwordMessageDisplay");
+            return;
+        }
+        if (newPassword !== confirmNewPassword) {
+            showMessage("New passwords do not match.", true, "passwordMessageDisplay");
+            return;
+        }
+        if (newPassword.length < 6) {
+            showMessage("New password must be at least 6 characters long.", true, "passwordMessageDisplay");
+            return;
+        }
+
+        const user = auth.currentUser;
+        if (user) {
+            try {
+                const credential = firebase.auth.EmailAuthProvider.credential(user.email, currentPassword);
+                await user.reauthenticateWithCredential(credential);
+                await user.updatePassword(newPassword);
+                showMessage("Password updated successfully! You will be logged out.", false, "passwordMessageDisplay");
+                setTimeout(() => {
+                    auth.signOut().then(() => {
+                        window.location.href = '/logout';
+                    });
+                }, 2000);
+            } catch (error) {
+                console.error("Password change error:", error);
+                let errorMessage = "Failed to change password. Please check your current password.";
+                if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+                    errorMessage = 'Incorrect current password.';
+                } else if (error.code === 'auth/requires-recent-login') {
+                    errorMessage = 'Please log out and log in again to change your password.';
+                } else if (error.code === 'auth/weak-password') {
+                    errorMessage = 'New password is too weak.';
+                }
+                showMessage(errorMessage, true, "passwordMessageDisplay");
+            }
+        } else {
+            showMessage("No user logged in. Please log in to change password.", true, "passwordMessageDisplay");
+            window.location.href = '/logout';
+        }
+    }
+
+    // --- Booking Functionality ---
+    async function loadBookings() {
+        if (!auth || !auth.currentUser) {
+            console.warn("No current user found for loading bookings. (loadBookings)");
+            const tbody = document.getElementById("yourBookings");
+            if (tbody) {
+                tbody.innerHTML = `<tr><td colspan="9" class="text-muted">Please log in to view your bookings.</td></tr>`;
+            }
+            return;
+        }
+
+        const tbody = document.getElementById("yourBookings");
+        if (!tbody) {
+            console.error("Target tbody element 'yourBookings' not found.");
+            return;
+        }
+        tbody.innerHTML = `<tr><td colspan="9" class="text-muted">Loading your bookings...</td></tr>`;
+
+        const currentUserEmail = auth.currentUser.email;
+        if (!currentUserEmail) {
+             console.warn("Current user email is not available for fetching bookings. UID:", auth.currentUser.uid);
+             tbody.innerHTML = `<tr><td colspan="9" class="text-muted">Your email is not available. Please contact support.</td></tr>`;
+             return;
+        }
+        console.log("Attempting to load bookings for email:", currentUserEmail);
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/bookings?email=${currentUserEmail}`);
+            const data = await res.json();
+            tbody.innerHTML = "";
+
+            if (res.ok && data.bookings) {
+                if (data.bookings.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="9" class="text-muted">No bookings found.</td></tr>`;
+                    console.log("No bookings found for", currentUserEmail);
+                    return;
+                }
+                data.bookings.forEach(b => {
+                    const statusClass = {
+                        'approved': 'status-approved',
+                        'pending': 'status-pending',
+                        'rejected': 'status-rejected'
+                    }[b.status || 'pending'];
+
+                    tbody.innerHTML += `
+                        <tr class="${b.status === 'approved' ? 'table-success' : b.status === 'rejected' ? 'table-danger' : 'table-warning'}">
+                            <td>${b.venue_name}</td>
+                            <td>${b.date}</td>
+                            <td>${b.start_time} - ${b.end_time}</td>
+                            <td>${b.course || 'N/A'}</td>
+                            <td>${b.purpose}</td>
+                            <td>${b.attendees}</td>
+                            <td><span class="status-badge ${statusClass}">${b.status ? b.status.replace(/\b\w/g, c => c.toUpperCase()) : 'Pending'}</span></td>
+                            <td>${b.email_sent ? '✅' : '❌'}</td>
+                            <td>${b.booked_by_matric_no || 'N/A'}</td>
+                        </tr>
+                    `;
+                });
+                console.log(`Successfully loaded ${data.bookings.length} bookings for ${currentUserEmail}.`);
+            } else {
+                showMessage(data.error || "Failed to load bookings.", true);
+                tbody.innerHTML = `<tr><td colspan="9" class="text-danger">Error loading bookings: ${data.error || 'Unknown error'}.</td></tr>`;
+                console.error("Failed to load bookings from API:", data.error);
+            }
+        } catch (error) {
+            console.error('Error loading bookings due to network or server issue:', error);
+            showMessage('Failed to load bookings due to network error.', true);
+            tbody.innerHTML = `<tr><td colspan="9" class="text-danger">Failed to load bookings due to network error.</td></tr>`;
+        }
+    }
+
+    async function loadBookingSummary() {
+        if (!auth || !auth.currentUser) {
+            console.warn("User not authenticated for booking summary. (loadBookingSummary)");
+            document.getElementById('totalBookingsSummary').textContent = '0';
+            document.getElementById('pendingBookingsSummary').textContent = '0';
+            document.getElementById('approvedBookingsSummary').textContent = '0';
+            document.getElementById('rejectedBookingsSummary').textContent = '0';
+            return;
+        }
+
+        const currentUserEmail = auth.currentUser.email;
+        if (!currentUserEmail) {
+             console.warn("Current user email is not available for booking summary. UID:", auth.currentUser.uid);
+             document.getElementById('totalBookingsSummary').textContent = '0';
+             document.getElementById('pendingBookingsSummary').textContent = '0';
+             document.getElementById('approvedBookingsSummary').textContent = '0';
+             document.getElementById('rejectedBookingsSummary').textContent = '0';
+             return;
+        }
+
+        console.log("Attempting to load booking summary for email:", currentUserEmail);
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/bookings?email=${currentUserEmail}`);
+            const data = await res.json();
+
+            if (res.ok && data.bookings) {
+                let total = data.bookings.length;
+                let pending = 0;
+                let approved = 0;
+                let rejected = 0;
+
+                data.bookings.forEach(b => {
+                    if (b.status === 'pending') {
+                        pending++;
+                    } else if (b.status === 'approved') {
+                        approved++;
+                    } else if (b.status === 'rejected') {
+                        rejected++;
+                    }
+                });
+
+                document.getElementById('totalBookingsSummary').textContent = total;
+                document.getElementById('pendingBookingsSummary').textContent = pending;
+                document.getElementById('approvedBookingsSummary').textContent = approved;
+                document.getElementById('rejectedBookingsSummary').textContent = rejected;
+
+                console.log(`Booking summary loaded: Total=${total}, Pending=${pending}, Approved=${approved}, Rejected=${rejected}`);
+            } else {
+                console.error("Failed to load booking summary:", data.error || "Unknown error");
+                document.getElementById('totalBookingsSummary').textContent = 'Error';
+                document.getElementById('pendingBookingsSummary').textContent = 'Error';
+                document.getElementById('approvedBookingsSummary').textContent = 'Error';
+                document.getElementById('rejectedBookingsSummary').textContent = 'Error';
+            }
+        } catch (error) {
+            console.error('Error loading booking summary due to network or server issue:', error);
+            document.getElementById('totalBookingsSummary').textContent = 'N/A';
+            document.getElementById('pendingBookingsSummary').textContent = 'N/A';
+            document.getElementById('approvedBookingsSummary').textContent = 'N/A';
+            document.getElementById('rejectedBookingsSummary').textContent = 'N/A';
+        }
+    }
+
+
+    // Load venues for booking form
+    async function loadVenuesForBookingForm() {
+        const selectElement = document.getElementById('venue');
+        if (!selectElement) {
+            console.error("Target select element 'venue' not found.");
+            return;
+        }
+        selectElement.innerHTML = '<option value="">Select Venue</option>';
+        console.log("Attempting to load venues for booking form.");
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/venues`);
+            const data = await response.json();
+            if (response.ok && data.venues) {
+                data.venues.forEach(venue => {
+                    const option = document.createElement('option');
+                    option.value = venue.id;
+                    option.textContent = `${venue.name} (Capacity: ${venue.capacity})`;
+                    selectElement.appendChild(option);
+                });
+                console.log(`Successfully loaded ${data.venues.length} venues.`);
+            } else {
+                showMessage(`Failed to load venues: ${data.error}`, true, "bookingMessageDisplay");
+                console.error("Failed to load venues from API:", data.error);
+            }
+        } catch (error) {
+            console.error('Error loading venues due to network or server issue:', error);
+            showMessage('Failed to load venues for booking form due to network error.', true, "bookingMessageDisplay");
+        }
+    }
+
+    const bookingForm = document.getElementById("bookingForm");
+    if (bookingForm) {
+        bookingForm.addEventListener("submit", async function(e) {
+            e.preventDefault();
+
+            if (!auth || !auth.currentUser) {
+                showMessage("Please log in to submit a booking.", true, "bookingMessageDisplay");
+                return;
+            }
+
+            const data = {
+                venue_id: document.getElementById("venue").value,
+                date: document.getElementById("date").value,
+                start_time: document.getElementById("start_time").value,
+                end_time: document.getElementById("end_time").value,
+                course: document.getElementById("course").value,
+                purpose: document.getElementById("purpose").value,
+                attendees: parseInt(document.getElementById("attendees").value)
+            };
+            console.log("Submitting booking with data:", data);
+
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/bookings`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await res.json();
+                if (res.ok) {
+                    showMessage(result.message, false, "bookingMessageDisplay");
+                    bookingForm.reset();
+                    console.log("Booking successful:", result.message);
+                } else {
+                    showMessage(result.error || "Booking failed.", true, "bookingMessageDisplay");
+                    console.error("Booking failed:", result.error);
+                }
+                loadBookings();
+                loadBookingsForCalendar();
+                loadUpcomingLectures();
+                loadBookingSummary();
+            } catch (error) {
+                console.error('Error submitting booking due to network or server issue:', error);
+                showMessage('Failed to submit booking due to network error.', true, 'bookingMessageDisplay');
+            }
+        });
+    }
+
+    // --- Site Notice ---
+    async function loadNotice() {
+        console.log("Attempting to load site notice.");
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/notice`);
+            const data = await res.json();
+            const noticeSpan = document.getElementById("dynamicNotice");
+            if (res.ok) {
+                noticeSpan.textContent = data.content || "No current announcements.";
+                console.log("Site notice loaded:", data.content);
+            } else {
+                noticeSpan.textContent = "Failed to load notice.";
+                console.error("Failed to load notice from API:", data.error);
+            }
+        } catch (error) {
+            console.error('Error loading notice due to network or server issue:', error);
+            showMessage('Failed to load notice due to network error.', true);
+        }
+    }
+
+    // --- Calendar View ---
+    let calendarInstance;
+    async function loadBookingsForCalendar() {
+        if (!auth || !auth.currentUser) {
+            console.warn("No current user found for calendar bookings. (loadBookingsForCalendar)");
+            renderCalendar([]);
+            return;
+        }
+
+        const currentUserEmail = auth.currentUser.email;
+        if (!currentUserEmail) {
+             console.warn("Current user email is not available for calendar bookings. UID:", auth.currentUser.uid);
+             renderCalendar([]);
+             return;
+        }
+        console.log("Attempting to load calendar bookings for email:", currentUserEmail);
+
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/bookings?email=${currentUserEmail}`);
+            const data = await res.json();
+            if (res.ok && data.bookings) {
+                const calendarEvents = data.bookings.map(b => {
+                    let color;
+                    if (b.status === 'approved') {
+                        color = '#28a745';
+                    } else if (b.status === 'rejected') {
+                        color = '#dc3545';
+                    } else {
+                        color = '#ffc107';
+                    }
+
+                    return {
+                        id: b.id,
+                        title: `${b.venue_name} (${b.course || b.purpose})`,
+                        start: `${b.date}T${b.start_time}`,
+                        end: `${b.date}T${b.end_time}`,
+                        backgroundColor: color,
+                        borderColor: color,
+                        extendedProps: {
+                            venue: b.venue_name,
+                            purpose: b.purpose,
+                            course: b.course,
+                            attendees: b.attendees,
+                            bookedBy: b.booked_by_fullname,
+                            status: b.status,
+                            email: b.booked_by_email,
+                            matric_no: b.booked_by_matric_no
+                        }
+                    };
+                });
+                renderCalendar(calendarEvents);
+                console.log(`Successfully loaded ${calendarEvents.length} events for calendar.`);
+            } else {
+                console.error("Failed to load bookings for calendar:", data.error || "Unknown error");
+                renderCalendar([]);
+            }
+        } catch (error) {
+            console.error('Error loading bookings for calendar due to network or server issue:', error);
+            showMessage('Failed to load calendar bookings due to network error.', true);
+            renderCalendar([]);
+        }
+    }
+
+    function renderCalendar(events) {
+        var calendarEl = document.getElementById('calendar');
+        if (!calendarEl) {
+            console.error("Calendar element not found.");
+            return;
+        }
+        if (calendarInstance) {
+            calendarInstance.destroy();
+        }
+        calendarInstance = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            },
+            events: events,
+            eventClick: function(info) {
+                let bookingDetails = `
+                    <strong>Venue:</strong> ${info.event.extendedProps.venue}<br>
+                    <strong>Date:</strong> ${info.event.start.toLocaleDateString()}<br>
+                    <strong>Time:</strong> ${info.event.start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${info.event.end ? info.event.end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'}<br>
+                    <strong>Course:</strong> ${info.event.extendedProps.course || 'N/A'}<br>
+                    <strong>Purpose:</strong> ${info.event.extendedProps.purpose}<br>
+                    <strong>Attendees:</strong> ${info.event.extendedProps.attendees}<br>
+                    <strong>Status:</strong> ${info.event.extendedProps.status.toUpperCase()}<br>
+                    <strong>Booked By:</strong> ${info.event.extendedProps.bookedBy || 'N/A'}<br>
+                    <strong>Email:</strong> ${info.event.extendedProps.email || 'N/A'}<br>
+                    <strong>Matric No:</strong> ${info.event.extendedProps.matric_no || 'N/A'}
+                `;
+                showCustomModal('Booking Details', bookingDetails);
+            }
+        });
+        calendarInstance.render();
+    }
+
+    async function loadUpcomingLectures() {
+        if (!auth || !auth.currentUser) {
+            console.warn("User not authenticated for upcoming lectures. (loadUpcomingLectures)");
+            const upcomingLecturesList = document.getElementById('upcomingLecturesList');
+            if (upcomingLecturesList) {
+                upcomingLecturesList.innerHTML = `<p class="text-muted text-center">Please log in to view upcoming lectures.</p>`;
+            }
+            return;
+        }
+
+        const currentUserEmail = auth.currentUser.email;
+        if (!currentUserEmail) {
+             console.warn("Current user email is not available for upcoming lectures. UID:", auth.currentUser.uid);
+             const upcomingLecturesList = document.getElementById('upcomingLecturesList');
+             if (upcomingLecturesList) {
+                upcomingLecturesList.innerHTML = `<p class="text-muted text-center">Your email is not available. Please contact support.</p>`;
+             }
+             return;
+        }
+
+        console.log("Attempting to load upcoming approved bookings for lectures for email:", currentUserEmail);
+        const upcomingLecturesList = document.getElementById('upcomingLecturesList');
+        if (!upcomingLecturesList) {
+            console.error("Target div element 'upcomingLecturesList' not found.");
+            return;
+        }
+        upcomingLecturesList.innerHTML = `<p class="text-muted text-center">Loading upcoming approved bookings...</p>`;
+
+        try {
+            const today = new Date().toISOString().split('T')[0];
+            const res = await fetch(`${API_BASE_URL}/api/bookings?email=${currentUserEmail}&status=approved&start_date=${today}`);
+            const data = await res.json();
+            upcomingLecturesList.innerHTML = '';
+
+            if (res.ok && data.bookings && data.bookings.length > 0) {
+                const now = new Date();
+                const futureBookings = data.bookings.filter(b => {
+                    const bookingDateTime = new Date(`${b.date}T${b.start_time}`);
+                    return bookingDateTime >= now;
+                });
+
+                futureBookings.sort((a, b) => {
+                    const dateTimeA = new Date(`${a.date}T${a.start_time}`);
+                    const dateTimeB = new Date(`${b.date}T${b.start_time}`);
+                    return dateTimeA - dateTimeB;
+                });
+
+                const upcomingFive = futureBookings.slice(0, 5);
+
+                upcomingFive.forEach(booking => {
+                    const bookingDate = new Date(`${booking.date}T${booking.start_time}`);
+                    const dateFormatted = bookingDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                    const timeFormatted = bookingDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+                    upcomingLecturesList.innerHTML += `
+                        <div class="upcoming-lecture-item">
+                            <div class="lecture-info">
+                                <h6>${booking.course || booking.purpose}</h6>
+                                <p>${booking.venue_name}</p>
+                            </div>
+                            <div class="lecture-time">
+                                ${dateFormatted} <span>${timeFormatted}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+                if (upcomingFive.length === 0) {
+                     upcomingLecturesList.innerHTML = `<p class="text-muted text-center">No upcoming approved bookings.</p>`;
+                }
+                console.log(`Successfully loaded ${upcomingFive.length} upcoming approved bookings.`);
+            } else {
+                upcomingLecturesList.innerHTML = `<p class="text-muted text-center">No upcoming approved bookings.</p>`;
+                console.log("No upcoming approved bookings found or error:", data.error || "No data");
+            }
+        } catch (error) {
+            console.error('Error loading upcoming lectures due to network or server issue:', error);
+            showMessage('Failed to load upcoming lectures due.to network error.', true, 'upcomingLecturesList');
+            upcomingLecturesList.innerHTML = `<p class="text-danger text-center">Failed to load upcoming bookings.</p>`;
+        }
+    }
+
+
+    // --- Notifications Functionality ---
+    async function loadNotifications() {
+        if (!auth || !auth.currentUser) {
+            console.warn("User not authenticated for loading notifications. (loadNotifications)");
+            const notificationsList = document.getElementById('notificationsList');
+            if (notificationsList) {
+                notificationsList.innerHTML = `<li class="list-group-item text-muted">Please log in to view your notifications.</li>`;
+            }
+            document.getElementById('notificationCount').textContent = '0';
+            return;
+        }
+
+        console.log("Attempting to load notifications for user:", auth.currentUser.uid);
+        const notificationsList = document.getElementById('notificationsList');
+        if (!notificationsList) {
+            console.error("Target ul element 'notificationsList' not found.");
+            return;
+        }
+        notificationsList.innerHTML = `<li class="list-group-item text-muted">Loading your notifications...</li>`;
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/notifications`);
+            const result = await response.json();
+            notificationsList.innerHTML = '';
+            let unreadCount = 0;
+
+            if (response.ok && result.notifications && result.notifications.length > 0) {
+                result.notifications.forEach(notification => {
+                    const timestamp = new Date(notification.timestamp).toLocaleString();
+                    let iconClass = 'fas fa-info-circle text-info';
+                    
+                    if (!notification.is_read) {
+                        unreadCount++;
+                    }
+
+                    if (notification.type === 'booking_status_update') {
+                        if (notification.status === 'approved') {
+                            iconClass = 'fas fa-check-circle text-success';
+                        } else if (notification.status === 'rejected') {
+                            iconClass = 'fas fa-times-circle text-danger';
+                        } else if (notification.status === 'pending') {
+                            iconClass = 'fas fa-hourglass-half text-warning';
+                        }
+                    } else if (notification.type === 'account_status') {
+                        if (notification.status === 'approved') {
+                            iconClass = 'fas fa-user-check text-success';
+                        } else if (notification.status === 'rejected') {
+                            iconClass = 'fas fa-user-times text-danger';
+                        }
+                    } else if (notification.type === 'site_notice') {
+                        iconClass = 'fas fa-bullhorn text-primary';
+                    }
+
+                    const listItem = document.createElement('li');
+                    listItem.dataset.notificationId = notification.id; 
+                    listItem.className = `list-group-item d-flex justify-content-between align-items-center ${!notification.is_read ? 'unread' : ''}`;
+                    listItem.innerHTML = `
+                        <div>
+                            <i class="${iconClass} me-2"></i> ${notification.message}
+                        </div>
+                        <small class="text-muted">${timestamp}</small>
+                    `;
+                    if (notification.id !== 'site-notice' && !notification.is_read) {
+                         listItem.addEventListener('click', () => markNotificationAsRead(notification.id));
+                         listItem.style.cursor = 'pointer';
+                    }
+                    notificationsList.appendChild(listItem);
+                });
+                console.log(`Successfully loaded ${result.notifications.length} notifications. Unread: ${unreadCount}`);
+            } else {
+                notificationsList.innerHTML = `<li class="list-group-item text-muted">No new notifications.</li>`;
+                console.log("No notifications found or error:", result.error || "No data");
+            }
+            document.getElementById('notificationCount').textContent = unreadCount > 0 ? unreadCount : '0';
+        } catch (error) {
+            console.error('Error loading notifications due to network or server issue:', error);
+            showMessage('Failed to load notifications due to network error.', true, 'notificationMessageDisplay');
+            notificationsList.innerHTML = `<li class="list-group-item text-danger">Failed to load notifications.</li>`;
+            document.getElementById('notificationCount').textContent = 'Error';
+        }
+    }
+
+    const markAllReadBtn = document.getElementById('markAllReadBtn');
+    if (markAllReadBtn) {
+        markAllReadBtn.addEventListener('click', async () => {
+            showCustomConfirm('Are you sure you want to mark all notifications as read?', async () => {
+                if (!auth || !auth.currentUser) {
+                    showMessage("Please log in to mark notifications.", true, "notificationMessageDisplay");
+                    return;
+                }
+                
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/notifications`);
+                    const result = await response.json();
+                    let successfulMarks = 0;
+
+                    if (response.ok && result.notifications && result.notifications.length > 0) {
+                        const unreadUserNotifications = result.notifications.filter(n => !n.is_read && n.id !== 'site-notice');
+
+                        for (const notification of unreadUserNotifications) {
+                             try {
+                                const res = await fetch(`${API_BASE_URL}/api/notifications/${notification.id}/mark_read`, {
+                                    method: "PUT",
+                                    headers: { "Content-Type": "application/json" }
+                                });
+                                if (res.ok) {
+                                    successfulMarks++;
+                                }
+                             } catch (error) {
+                                 console.error(`Error marking notification ${notification.id} as read:`, error);
+                             }
+                        }
+                    }
+                    showMessage(`Marked ${successfulMarks} notifications as read.`, false, "notificationMessageDisplay");
+                    loadNotifications();
+                } catch (error) {
+                    console.error('Error fetching notifications for "Mark All As Read":', error);
+                    showMessage('Failed to mark all notifications as read due to network error.', true, "notificationMessageDisplay");
+                }
+            });
+        });
+    }
+
+    // --- Initialization and Event Listeners ---
+    document.addEventListener("DOMContentLoaded", async () => {
+        firebase.initializeApp(firebaseConfig);
+        auth = firebase.auth();
+        db = firebase.firestore();
+        // Removed storage initialization
+        console.log("Firebase initialized. Auth object:", auth);
+
+
+        if (initialAuthToken && initialAuthToken.length > 0) {
+            try {
+                console.log("Attempting signInWithCustomToken...");
+                await auth.signInWithCustomToken(initialAuthToken);
+                console.log("signInWithCustomToken successful.");
+            } catch (error) {
+                console.error("Error during signInWithCustomToken:", error);
+                if (error.code) {
+                    console.error("Firebase Auth Error Code:", error.code);
+                    console.error("Firebase Auth Error Message:", error.message);
+                }
+                try {
+                     await auth.signInAnonymously();
+                     console.log("Signed in anonymously after custom token failure.");
+                } catch (anonError) {
+                    console.error("Error signing in anonymously:", anonError);
+                }
+            }
+        } else {
+            console.log("No initialAuthToken found (or it was empty). Attempting anonymous sign-in or relying on existing session.");
+            try {
+                await auth.signInAnonymously();
+                console.log("Signed in anonymously.");
+            } catch (anonError) {
+                console.error("Error signing in anonymously:", anonError);
+            }
+        }
+
+
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                console.log("onAuthStateChanged: User detected. UID:", user.uid, "Email:", user.email);
+                loadUserProfile();
+                loadBookings();
+                loadBookingsForCalendar();
+                loadVenuesForBookingForm();
+                loadNotifications();
+                loadUpcomingLectures();
+                loadBookingSummary();
+
+                document.querySelectorAll('#sidebar .nav-link').forEach(link => {
+                    if (link.dataset.section) {
+                        link.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            const targetSection = this.getAttribute('data-section');
+                            showSection(`section-${targetSection}`);
+                            if (targetSection === 'my-bookings') {
+                                loadBookings();
+                            } else if (targetSection === 'book-venue') {
+                                loadVenuesForBookingForm();
+                            } else if (targetSection === 'profile') {
+                                loadUserProfile();
+                            } else if (targetSection === 'calendar-view') {
+                                loadBookingsForCalendar();
+                            } else if (targetSection === 'notifications') {
+                                loadNotifications();
+                            } else if (targetSection === 'home') {
+                                loadUpcomingLectures();
+                                loadBookingSummary();
+                            }
+                        });
+                    }
+                });
+
+                loadNotice();
+
+            } else {
+                console.log("onAuthStateChanged: User signed out or not available. Clearing user data.");
+                document.getElementById('userFullnameDisplay').textContent = 'Guest';
+                document.getElementById('profileCardFullname').textContent = 'Full Name: N/A';
+                document.getElementById('profileCardEmail').textContent = 'Email: N/A';
+                document.getElementById('profileCardMatricNo').textContent = 'Matric No: N/A';
+                // Removed profile picture updates here as well
+
+                const yourBookingsTbody = document.getElementById('yourBookings');
+                if (yourBookingsTbody) {
+                    yourBookingsTbody.innerHTML = `<tr><td colspan="9" class="text-muted">Please log in to view your bookings.</td></tr>`;
+                }
+                if (document.getElementById('profileFullname')) document.getElementById('profileFullname').value = '';
+                if (document.getElementById('profileEmail')) document.getElementById('profileEmail').value = '';
+                if (document.getElementById('profileMatricNo')) document.getElementById('profileMatricNo').value = '';
+                renderCalendar([]);
+                const notificationsList = document.getElementById('notificationsList');
+                if (notificationsList) {
+                    notificationsList.innerHTML = `<li class="list-group-item text-muted">Please log in to view your notifications.</li>`;
+                }
+                const upcomingLecturesList = document.getElementById('upcomingLecturesList');
+                if (upcomingLecturesList) {
+                     upcomingLecturesList.innerHTML = `<p class="text-muted text-center\">Please log in to view upcoming lectures.</p>`;
+                }
+                document.getElementById('totalBookingsSummary').textContent = '0';
+                document.getElementById('pendingBookingsSummary').textContent = '0';
+                document.getElementById('approvedBookingsSummary').textContent = '0';
+                document.getElementById('rejectedBookingsSummary').textContent = '0';
+                document.getElementById('notificationCount').textContent = '0';
+            }
+        });
+
+        document.querySelector('.menu-toggle').addEventListener('click', function() {
+            document.getElementById('sidebar').classList.toggle('show');
+        });
+
+        document.getElementById('content-wrapper').addEventListener('click', function(e) {
+            if (window.innerWidth < 992 && document.getElementById('sidebar').classList.contains('show')) {
+                if (!e.target.closest('#sidebar') && !e.target.closest('.menu-toggle')) {
+                     document.getElementById('sidebar').classList.remove('show');
+                }
+            }
+        });
+    });
+</script>
+
+</body>
+</html>
